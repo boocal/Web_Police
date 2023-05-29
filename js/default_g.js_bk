@@ -1,0 +1,195 @@
+// JavaScript Document
+
+//ロールオーバー------------------------------------------------------
+
+function smartRollover() {  
+	if(document.getElementsByTagName) {  
+			var images = document.getElementsByTagName("img");  
+			for(var i=0; i < images.length; i++) {  
+					if(images[i].getAttribute("src").match("_off."))  
+					{  
+							images[i].onmouseover = function() {  
+									this.setAttribute("src", this.getAttribute("src").replace("_off.", "_on."));  
+							}  
+							images[i].onmouseout = function() {  
+									this.setAttribute("src", this.getAttribute("src").replace("_on.", "_off."));  
+							}  
+					}  
+			}  
+	}  
+}  
+
+if(window.addEventListener) {  
+	window.addEventListener("load", smartRollover, false);  
+	window.addEventListener("load", initFontCssLink, false);  
+	window.addEventListener("load", googleSearchInit, false);
+}  
+else if(window.attachEvent) {  
+	window.attachEvent("onload", smartRollover);  
+	window.attachEvent("onload", initFontCssLink);	
+	window.attachEvent("onload", googleSearchInit);
+}
+
+
+
+//Cookieからkeywordの値を読み込みます
+function loadCookie(keyword){
+if(typeof(keyword) == "undefined"){
+	return "";
+}
+keyword += "=";
+var result = "";
+var cookie = document.cookie + ";";
+var s = cookie.indexOf(keyword);
+if(s != -1){
+	var e = cookie.indexOf(";", s);
+	result = cookie.substring(s + keyword.length, e);
+}
+return result;
+}
+
+//正規表現のエスケープ文字列対応
+var escapes = [["\^","\\^"]
+			,["\$","\\$"]
+			,["\\","\\\\"]
+//				,["\.","\."]
+			,["\*","\\*"]
+			,["\+","\\+"]
+			,["\?","\\?"]
+			,["\(","\\("]
+			,["\)","\\)"]
+			,["\[","\\["]
+			,["\]","\\]"]
+			,["\{","\\{"]
+			,["\}","\\}"]
+			,["\|","\\|"]];
+
+//非正規表現の文字列に正規表現のエスケープを施します
+function regexpEscape(s){
+var r = s;
+for(var n = 0; n < escapes.length; n++){
+	r = r.replaceAll(escapes[n][0], escapes[n][1]);
+}
+return r;
+}
+
+//StringクラスにreplaceAll関数を追加します
+String.prototype.replaceAll = function(arg0, arg1){
+return this.split(arg0).join(arg1);
+}
+
+//フォント用CSS切替 ------------------------------------------------------------
+
+//link要素のhref属性の接頭・接尾
+var fontCssHrefPrefix = "css/active/font_";
+var fontCssHrefSuffix = ".css";
+
+//フォント用CSSを読み込むlink要素
+var fontCssLink;
+
+//Cookieの有効期間(日数)
+var cookieValid = 30;
+
+var siteLevel = "";
+
+//フォント用CSSを変更します
+function fontChange(f){
+var fontSize = '100%'
+switch(f){
+	case 1: 
+		fontSize = '50%';
+		break;
+	case 2: 
+		fontSize = '80%';
+}
+document.body.style.fontSize = fontSize;
+}
+
+//画面要素からフォント用CSSを読み込むlink要素を探しfontCssLinkに格納します
+//またCookieにフォント用CSSの情報があれば読み込みます
+function initFontCssLink(){
+//正規表現に書き換えます
+fontCssHrefPrefix = regexpEscape(fontCssHrefPrefix);
+fontCssHrefSuffix = regexpEscape(fontCssHrefSuffix);
+
+var regex = new RegExp(fontCssHrefPrefix + "(large|medium|small)" + fontCssHrefSuffix);
+
+//画面要素からlink要素を探します
+var elm;
+if(document.all){
+	elm = document.all.tags("link");
+}else if(document.getElementsByTagName){
+	elm = document.getElementsByTagName("link"); 
+}
+
+//探したlink要素から正規表現regexにマッチする要素をfontCssLinkに格納します
+for(var n = 0; n < elm.length; n++){
+	var _elm = elm[n];
+	if(_elm.href.match(regex)){
+		fontCssLink = _elm;
+		siteLevel = fontCssLink.href.substr(0, fontCssLink.href.indexOf(fontCssHrefPrefix));
+		break;	//原則1つまでなので探知したタイミングでループを抜ける
+	}
+}
+
+//フォント用CSSを読み込みます
+var f = loadCookie("fontCss");
+if(f){
+	fontCssLink.href = siteLevel + fontCssHrefPrefix + f + fontCssHrefSuffix;
+}
+}
+
+//任意で読み込んだフォント用CSSをCookieに記録します
+function fontCssMemorize(f){
+if(!navigator.cookieEnabled){
+	return;	//Cookieが利用できなければ中止する
+}
+var day = new Date();
+day.setTime(day.getTime() + (cookieValid * 1000 * 60 * 60 * 24));
+document.cookie = "fontCss=" + f + ";expires=" + day.toGMTString();
+}
+
+
+//Google検索--------------------------------------------------------------------
+
+//Googleカスタム検索のソースコピー部分
+google.load('search', '1', {language : 'ja'});
+google.setOnLoadCallback(
+function(){
+	var customSearchControl = new google.search.CustomSearchControl('004518366540016276844:qbbffaewer4');
+	customSearchControl.setResultSetSize(google.search.Search.FILTERED_CSE_RESULTSET);
+	var options = new google.search.DrawOptions();
+	options.setSearchFormRoot('cse-search-form');
+	customSearchControl.draw('swap', options);			//draw()の第一引数のみ修正
+}, true);
+
+//Google検索のナビゲーションラッパー
+function googleSearchInit(){
+var e = document.getElementsByTagName("input");
+var c = document.getElementsByTagName("div");
+for(var i = 0; i < e.length; i++){
+	if(e[i].type == "submit"){
+		e[i].onclick = function(){
+			//検索ボタン
+			document.getElementById("swap").style.display = "block";
+			document.getElementById("swap_clear").style.display = "block";
+			document.getElementById("mainContents").style.display = "none";
+		};
+	}
+}
+for(var i = 0; i < c.length; i++){
+	if(c[i].className == "gsc-clear-button"){
+		c[i].onclick = function(){
+			//結果をクリア
+			googleSearchClearit();
+		}
+	}
+}
+}
+
+//Google検索の検索結果をクリア
+function googleSearchClearit(){
+document.getElementById("swap").style.display = "none";
+document.getElementById("swap_clear").style.display = "none";
+document.getElementById("mainContents").style.display = "block";
+}
